@@ -1,7 +1,7 @@
 #pragma once
 #include "types.h"
 #include "imemory.h"
-#include "texture.h"
+#include "graphicsdevice.h"
 #include "address_defines.h"
 
 #define BACKGROUND_AND_WINDOW_DATA_SIZE 0x1000

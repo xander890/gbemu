@@ -1,3 +1,3 @@
 #pragma once
-#include "texture.h"
-#include "../imgui/imgui.h"
+#include "graphicsdevice.h"
+#include "imgui/imgui.h"

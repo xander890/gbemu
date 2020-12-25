@@ -1,7 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <d3d11.h>
-#include "types.h"
+#include "../types.h"
 
 enum ESamplerType
 {

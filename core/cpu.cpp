@@ -1,11 +1,11 @@
 #include "cpu.h"
 #include "emulator.h"
+#include "gui.h"
+#include "ioregisters.h"
 #include <string>
 #include <iostream>
 #include <sstream>
-#include "gui.h"
 #include <thread>
-#include "ioregisters.h"
 #pragma warning(disable : 4127)
 
 // Works for uint8 and uint16 only
