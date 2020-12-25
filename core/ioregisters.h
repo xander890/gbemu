@@ -2,6 +2,7 @@
 #include "types.h"
 #include "imemory.h"
 #include "types.h"
+#include "address_defines.h"
 
 class ZEmulator;
 
@@ -65,18 +66,17 @@ enum EButtonFlags : uint8
 class ZInputOutputMemoryController : public IMemoryController
 {
 public:
-	ZInputOutputMemoryController(ZEmulator* emu) : m_emulator(emu) { memset(m_input_memory, 0x00, sizeof(m_input_memory)); }
+	ZInputOutputMemoryController() { memset(m_input_memory, 0x00, sizeof(m_input_memory)); }
 	~ZInputOutputMemoryController() {}
 	// Inherited via IMemoryController
 	virtual uint8 LoadMemory(uint16 address) override;
 	virtual void StoreMemory(uint16 address, uint8 value) override;
 
 private:
-	uint8 m_input_memory[0x80];
+	uint8 m_input_memory[IO_SIZE];
 
 	// All the 8 buttons inputs in one variable
 	uint8 m_triggered_inputs = 0; 
-	ZEmulator* m_emulator;
 };
 
 void InputWindow(ZEmulator* pEMU);

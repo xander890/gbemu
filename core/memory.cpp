@@ -120,32 +120,32 @@ void MemoryWindow(ZEmulator* pEmu)
 
 ZMainMemory::ZMainMemory(ZEmulator* emu)
 {
-    controllers[MEMORY_AREA_ROM]            = { 0x0000, 0x7FFF, nullptr };
+    controllers[MEMORY_AREA_ROM]            = { ADDRESS_ROM_BANK0_START, ADDRESS_ROM_BANK0_END, nullptr };
 
-    controllers[MEMORY_AREA_VRAM]           = { 0x8000, 0x9FFF, nullptr };
+    controllers[MEMORY_AREA_VRAM]           = { ADDRESS_VRAM_START, ADDRESS_VRAM_END, nullptr };
     controllers[MEMORY_AREA_VRAM].controller_map = new ZVideoRAMController(emu);
 
-    controllers[MEMORY_AREA_EXTERNAL_RAM]   = { 0xA000, 0xBFFF, controllers[MEMORY_AREA_ROM].controller_map };
+    controllers[MEMORY_AREA_EXTERNAL_RAM]   = { ADDRESS_SRAM_START, ADDRESS_SRAM_END, controllers[MEMORY_AREA_ROM].controller_map };
 
-    controllers[MEMORY_AREA_WRAM]           = { 0xC000, 0xDFFF, nullptr };
+    controllers[MEMORY_AREA_WRAM]           = { ADDRESS_WRAM_START, ADDRESS_WRAM_END, nullptr };
     controllers[MEMORY_AREA_WRAM].controller_map = new ZMemoryControllerSimple(controllers[MEMORY_AREA_WRAM].address_start, controllers[MEMORY_AREA_WRAM].address_end);
 
-    controllers[MEMORY_AREA_ECHO]           = { 0xE000, 0xFDFF, nullptr };
+    controllers[MEMORY_AREA_ECHO]           = { ADDRESS_ECHO_START, ADDRESS_ECHO_END, nullptr };
     controllers[MEMORY_AREA_ECHO].controller_map = new ZMemoryControllerEcho(controllers[MEMORY_AREA_WRAM].controller_map, 0xC000 - 0xE000);
 
-    controllers[MEMORY_AREA_OAM]            = { 0xFE00, 0xFE9F, nullptr };
+    controllers[MEMORY_AREA_OAM]            = { ADDRESS_OAM_START, ADDRESS_OAM_END, nullptr };
     controllers[MEMORY_AREA_OAM].controller_map = new ZMemoryControllerSimple(controllers[MEMORY_AREA_OAM].address_start, controllers[MEMORY_AREA_OAM].address_end);
 
     controllers[MEMORY_AREA_INVALID]        = { 0xFEA0, 0xFEFF, nullptr };
     controllers[MEMORY_AREA_INVALID].controller_map = new ZMemoryControllerInvalid();
 
-    controllers[MEMORY_AREA_IO_REGISTERS]   = { 0xFF00, 0xFF7F, nullptr };
-    controllers[MEMORY_AREA_IO_REGISTERS].controller_map = new ZInputOutputMemoryController(emu);
+    controllers[MEMORY_AREA_IO_REGISTERS]   = { ADDRESS_IO_START, ADDRESS_IO_END, nullptr };
+    controllers[MEMORY_AREA_IO_REGISTERS].controller_map = new ZInputOutputMemoryController();
 
-    controllers[MEMORY_AREA_HRAM]           = { 0xFF80, 0xFFFE, nullptr };
+    controllers[MEMORY_AREA_HRAM]           = { ADDRESS_HRAM_START, ADDRESS_HRAM_END, nullptr };
     controllers[MEMORY_AREA_HRAM].controller_map = new ZMemoryControllerSimple(controllers[MEMORY_AREA_HRAM].address_start, controllers[MEMORY_AREA_HRAM].address_end);
 
-    controllers[MEMORY_AREA_INTERRUPT]      = { 0xFFFF, 0xFFFF, nullptr };
+    controllers[MEMORY_AREA_INTERRUPT]      = { INTERRUPT_ENABLE_FLAG, INTERRUPT_ENABLE_FLAG, nullptr };
     controllers[MEMORY_AREA_INTERRUPT].controller_map = new ZMemoryControllerSimple(controllers[MEMORY_AREA_INTERRUPT].address_start, controllers[MEMORY_AREA_INTERRUPT].address_end);
 }
 
@@ -169,7 +169,6 @@ void ZMainMemory::LoadROM(uint8* rom, uint32 romsize)
     ZROMController* romcontroller = ZROMController::Create(rom, romsize);
     controllers[MEMORY_AREA_ROM].controller_map = romcontroller;
     controllers[MEMORY_AREA_EXTERNAL_RAM].controller_map = romcontroller;
-    map_base_rom = true;
 }
 
 void ZMainMemory::UnloadROM()
@@ -181,14 +180,14 @@ void ZMainMemory::UnloadROM()
         controllers[MEMORY_AREA_ROM].controller_map = nullptr;
         controllers[MEMORY_AREA_EXTERNAL_RAM].controller_map = nullptr;
     }
-    map_base_rom = false;
 }
 
 uint8 ZMainMemory::LoadMemory(uint16 address)
 {
-    if (map_base_rom && address < 0x4000)
+    if (address < 0x4000 && (address < 0x100 || address >= 0x150))
     {
-        if (address < 0x100 || address >= 0x150)
+        uint8 baserom = controllers[MEMORY_AREA_IO_REGISTERS].controller_map->LoadMemory(DISABLE_BASE_ROM);
+        if (baserom == 0)
         {
             uint32 size;
             return GetDMGRom(size)[address];
@@ -207,11 +206,6 @@ uint8 ZMainMemory::LoadMemory(uint16 address)
 void ZMainMemory::StoreMemory(uint16 address, uint8 value)
 {
     m_nlastwritten = address;
-    if (address == 0xFF50)
-    {
-        map_base_rom = false;
-        return;
-    }
     for (uint32 n = 0; n < MEMORY_AREA_COUNT; n++)
     {
         if (address >= controllers[n].address_start && address <= controllers[n].address_end)

@@ -16,7 +16,7 @@ uint8 ZInputOutputMemoryController::LoadMemory(uint16 address)
 void ZInputOutputMemoryController::StoreMemory(uint16 address, uint8 value)
 {
 	uint16 io_addr = address & 0xFF;
-	assert(io_addr < 0x80);
+	assert(io_addr < IO_SIZE);
 
 	if (address == JOYPAD_REGISTER)
 	{

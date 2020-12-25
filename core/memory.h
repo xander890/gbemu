@@ -50,6 +50,5 @@ public:
 	ZVideoRAMController* GetVRAM();
 private:
 	MemoryRangeMap controllers[MEMORY_AREA_COUNT];
-	bool map_base_rom = false;
 	uint16 m_nlastwritten = 0;
 };
