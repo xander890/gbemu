@@ -49,8 +49,8 @@ private:
 	std::deque<SPixel> m_oam_fifo;
 	std::deque<SPixel> m_bg_fifo;
 
-	void OAMScan(uint16 scanline);
-	void PixelTransfer(uint16 scanline);
+	void OAMScan(uint8 scanline);
+	void PixelTransfer(uint8 scanline);
 
 	ZVideoRAMController* m_vram;
 	ZEmulator* m_emulator;

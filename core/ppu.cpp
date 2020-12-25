@@ -43,7 +43,7 @@ uint8 ZPPU::GetSpriteSize()
 	return pConfig->sprite_size == 0? 8 : 16;
 }
 
-void ZPPU::OAMScan(uint16 scanline)
+void ZPPU::OAMScan(uint8 scanline)
 {
 	m_oamfound = 0;
 	uint8 h = GetSpriteSize();
@@ -52,7 +52,7 @@ void ZPPU::OAMScan(uint16 scanline)
 		uint16 sprite_address = ADDRESS_OAM_START + i * 4; // 4 bytes per sprite
 		uint8 x = m_emulator->GetMemory()->LoadMemory(sprite_address + 1);
 		uint8 y = m_emulator->GetMemory()->LoadMemory(sprite_address + 0);
-		uint16 translated_ly = scanline + 16;
+		uint8 translated_ly = scanline + 16;
 		bool visible = x != 0 && translated_ly >= y && translated_ly < (y + h);
 		if (visible)
 		{
@@ -61,14 +61,14 @@ void ZPPU::OAMScan(uint16 scanline)
 	}
 }
 
-void ZPPU::PixelTransfer(uint16 scanline)
+void ZPPU::PixelTransfer(uint8 scanline)
 {
 	uint8 window_x = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_WINDOW_X);
 	uint8 window_y = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_WINDOW_Y);
 	uint8 scroll_x = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_SCROLL_X);
 	uint8 scroll_y = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_SCROLL_Y);
 	bool can_get_window = scanline >= window_y;
-	uint16 translated_ly = scanline + 16;
+	uint8 translated_ly = scanline + 16;
 
 	m_oam_fifo.clear();
 	m_bg_fifo.clear();
@@ -106,7 +106,7 @@ void ZPPU::PixelTransfer(uint16 scanline)
 					uint8 sprite_high = m_emulator->GetMemory()->LoadMemory(sprite_vram_row + 1);
 					SPixel p = {};
 
-					uint8 existing_pixels = m_oam_fifo.size();
+					uint8 existing_pixels = (uint8)m_oam_fifo.size();
 					for (uint8 i = 0; i < 8; i++)
 					{
 						// Extract pixel
@@ -138,7 +138,7 @@ void ZPPU::PixelTransfer(uint16 scanline)
 			}
 		}
 
-		uint8 fetch_x = scroll_x + x;
+		uint16 fetch_x = scroll_x + x; // this can overflow
 		uint8 fetch_y = ((scroll_y + scanline) & 0xff);
 		uint16 tile_start_address = m_vram->GetBackgroundTileStart();
 
@@ -208,6 +208,7 @@ void ZPPU::PixelTransfer(uint16 scanline)
 			}
 		}
 
+		// Pixel merge!
 		SPixel pixel = m_bg_fifo.front();
 
 		uint8 bg_palette = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_BACKGROUND_PALETTE_DMG);
@@ -235,6 +236,5 @@ void ZPPU::PixelTransfer(uint16 scanline)
 		uint32 palette_to_rgb_dmg[4] = { 0xffffffff, 0xffaaaaaa, 0xff555555, 0xff000000 };
 		uint32 final_color = palette_to_rgb_dmg[color_index];
 
-		// Pixel merge!
 	}
 }
