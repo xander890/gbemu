@@ -36,25 +36,11 @@ void ZVideoRAMController::StoreMemory(uint16 address, uint8 value)
 	m_videobank0[address - ADDRESS_VRAM_START] = value;
 }
 
-uint8* ZVideoRAMController::GetSpriteData()
+uint8* ZVideoRAMController::Get(uint16 address)
 {
-	return &m_videobank0[GetSpriteDataStart() - ADDRESS_VRAM_START];
+	return &m_videobank0[address - ADDRESS_VRAM_START];
 }
 
-uint8* ZVideoRAMController::GetBackgroundData()
-{
-	return &m_videobank0[GetBackgroundDataStart() - ADDRESS_VRAM_START];
-}
-
-uint8* ZVideoRAMController::GetBackgroundTile()
-{
-	return &m_videobank0[GetBackgroundTileStart() - ADDRESS_VRAM_START];
-}
-
-uint8* ZVideoRAMController::GetWindowTile()
-{
-	return &m_videobank0[GetWindowTileStart() - ADDRESS_VRAM_START];
-}
 
 uint16 ZVideoRAMController::GetSpriteDataStart()
 {
@@ -64,34 +50,33 @@ uint16 ZVideoRAMController::GetSpriteDataStart()
 uint16 ZVideoRAMController::GetBackgroundDataStart()
 {
 	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
-	SLCDConfig* pConfig = (SLCDConfig*)&lcd;
-	return pConfig->background_data_start == 0? BACKGROUND_AND_WINDOW_DATA_START_0 : BACKGROUND_AND_WINDOW_DATA_START_1;
+	bool bZero = (lcd & BACKGROUND_DATA_START_FLAG) == 0;
+	return bZero? BACKGROUND_AND_WINDOW_DATA_START_0 : BACKGROUND_AND_WINDOW_DATA_START_1;
 }
 
 uint16 ZVideoRAMController::GetBackgroundTileStart()
 {
 	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
-	SLCDConfig* pConfig = (SLCDConfig*)&lcd;
-	return pConfig->background_tilemap_start == 0? BACKGROUND_TILE_MAP_START_0 : BACKGROUND_TILE_MAP_START_1;
+	bool bZero = (lcd & BACKGROUND_TILEMAP_START_FLAG) == 0;
+	return bZero? BACKGROUND_TILE_MAP_START_0 : BACKGROUND_TILE_MAP_START_1;
 }
 
 uint16 ZVideoRAMController::GetWindowTileStart()
 {
 	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
-	SLCDConfig* pConfig = (SLCDConfig*)&lcd;
-	return pConfig->window_tilemap_start == 0? WINDOW_TILE_MAP_START_0 : WINDOW_TILE_MAP_START_1;
+	bool bZero = (lcd & WINDOW_TILEMAP_START_FLAG) == 0;
+	return bZero? WINDOW_TILE_MAP_START_0 : WINDOW_TILE_MAP_START_1;
 }
 
-#include <iostream>
 void ZVideoRAMController::DrawGUI()
 {
 	assert(texdebug->size / 4 == TEX_WIDTH * TEX_WIDTH);
 	uint32* texcpu = (uint32*)MapTexture2D(texdebug);
-	DecodeImageFromTiles(GetBackgroundData(), 0x1000, 16, texcpu, true);
+	DecodeImageFromTiles(Get(GetBackgroundDataStart()), 0x1000, 16, texcpu, true);
 	UnmapTexture2D(texdebug);
 
 	uint32* texback = (uint32*)MapTexture2D(backgroundtex);
-	DecodeBackground(GetBackgroundData(), GetBackgroundTile(), texback, true);
+	DecodeBackground(Get(GetBackgroundDataStart()), Get(GetBackgroundTileStart()), texback, true);
 	UnmapTexture2D(backgroundtex);
 
 	ImGui::Image(texdebug, ImVec2(2.0f*TEX_WIDTH, 2.0f*TEX_WIDTH));

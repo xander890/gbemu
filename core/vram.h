@@ -29,10 +29,7 @@ public:
 	virtual uint8 LoadMemory(uint16 address) override;
 	virtual void StoreMemory(uint16 address, uint8 value) override;
 
-	uint8* GetSpriteData();
-	uint8* GetBackgroundData();
-	uint8* GetBackgroundTile();
-	uint8* GetWindowTile();
+	uint8* Get(uint16 address);
 
 	uint16 GetSpriteDataStart();
 	uint16 GetBackgroundDataStart();
@@ -42,8 +39,8 @@ public:
 	void DrawGUI();
 private:
 	uint8* m_videobank0;
+
 	SInternalTexture* texdebug;
-	SInternalTexture* backgroundtex;
-	
+	SInternalTexture* backgroundtex;	
 	ZEmulator* m_emulator;
 };

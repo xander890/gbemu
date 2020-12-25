@@ -10,19 +10,27 @@ class ZVideoRAMController;
 #define MAX_SPRITES 40
 #define MAX_SPRITES_PER_SCANLINE 10
 
-struct SLCDConfig
+enum ELCDConfigFlags : uint8
 {
-	uint8 window_display_prio : 1;
-	uint8 sprite_enable : 1;
-	uint8 sprite_size : 1;
-	uint8 background_tilemap_start : 1;
-	uint8 background_data_start : 1;
-	uint8 window_enable : 1;
-	uint8 window_tilemap_start : 1;
-	uint8 lcd_enable : 1;
+	WINDOW_DISPLAY_PRIO_FLAG		= 1 << 0,
+	SPRITE_ENABLE_FLAG				= 1 << 1,
+	SPRITE_SIZE_FLAG				= 1 << 2,
+	BACKGROUND_TILEMAP_START_FLAG	= 1 << 3,
+	BACKGROUND_DATA_START_FLAG		= 1 << 4,
+	WINDOW_ENABLE_FLAG				= 1 << 5,
+	WINDOW_TILEMAP_START_FLAG		= 1 << 6,
+	LCD_ENABLE_FLAG					= 1 << 7
 };
 
-static_assert(sizeof(SLCDConfig) == 1, "");
+enum ELCDStatFlags : uint8
+{
+	MODE_FLAG_MASK					= 0x3,
+	COINCIDENCE_TYPE_FLAG			= 1 << 2,
+	HBLANK_INTERRUPT_FLAG			= 1 << 3,
+	VBLANK_INTERRUPT_FLAG			= 1 << 4,
+	OAM_INTERRUPT_FLAG				= 1 << 5,
+	CONCIDENCE_INTERRUPT_FLAG		= 1 << 6,
+};
 
 class ZPPU
 {

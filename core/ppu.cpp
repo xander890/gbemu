@@ -17,30 +17,26 @@ ZPPU::~ZPPU()
 bool ZPPU::IsLCDEnabled()
 {
 	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
-	SLCDConfig* pConfig = (SLCDConfig*)&lcd;
-	return pConfig->lcd_enable;
+	return (lcd & LCD_ENABLE_FLAG) != 0;
 }
 
 bool ZPPU::IsWindowEnabled()
 {
 	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
-	SLCDConfig* pConfig = (SLCDConfig*)&lcd;
-	return pConfig->window_enable;
+	return (lcd & WINDOW_ENABLE_FLAG) != 0;
 }
 
 
 bool ZPPU::IsSpriteEnabled()
 {
 	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
-	SLCDConfig* pConfig = (SLCDConfig*)&lcd;
-	return pConfig->sprite_enable;
+	return (lcd & SPRITE_ENABLE_FLAG) != 0;
 }
 
 uint8 ZPPU::GetSpriteSize()
 {
 	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
-	SLCDConfig* pConfig = (SLCDConfig*)&lcd;
-	return pConfig->sprite_size == 0? 8 : 16;
+	return (lcd & SPRITE_SIZE_FLAG) == 0? 8 : 16;
 }
 
 void ZPPU::OAMScan(uint8 scanline)
