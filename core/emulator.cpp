@@ -113,7 +113,7 @@ ZEmulator::ZEmulator()
 {
     pMemory = new ZMainMemory(this);
     pCPU = new ZCPU(pMemory);
-    pPPU = new ZPPU(this);
+    pPPU = new ZPPU(pMemory);
     m_thread = std::thread([this] { pCPU->Run(); });
 }
 

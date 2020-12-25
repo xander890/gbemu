@@ -19,13 +19,13 @@
 #define BACKGROUND_AND_WINDOW_DATA_START_0 0x8800
 #define BACKGROUND_AND_WINDOW_DATA_START_1 0x8000
 
-class ZEmulator;
+class ZMainMemory;
 class ZVideoRAMController : public IMemoryController
 {
 public:
-	ZVideoRAMController(ZEmulator * pEmu);
+	ZVideoRAMController(ZMainMemory * pmemory);
 	~ZVideoRAMController();
-	// Inherited via IMemoryController
+
 	virtual uint8 LoadMemory(uint16 address) override;
 	virtual void StoreMemory(uint16 address, uint8 value) override;
 
@@ -42,5 +42,5 @@ private:
 
 	SInternalTexture* texdebug;
 	SInternalTexture* backgroundtex;	
-	ZEmulator* m_emulator;
+	ZMainMemory* m_memory;
 };

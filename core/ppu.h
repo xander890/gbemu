@@ -2,7 +2,7 @@
 #include "types.h"
 #include <queue>
 
-class ZEmulator;
+class ZMainMemory;
 class ZVideoRAMController;
 
 #define SCREEN_WIDTH 160
@@ -35,7 +35,7 @@ enum ELCDStatFlags : uint8
 class ZPPU
 {
 public:
-	ZPPU(ZEmulator* emu);
+	ZPPU(ZMainMemory* emu);
 	~ZPPU();
 	bool IsLCDEnabled();
 	bool IsWindowEnabled();
@@ -61,5 +61,5 @@ private:
 	void PixelTransfer(uint8 scanline);
 
 	ZVideoRAMController* m_vram;
-	ZEmulator* m_emulator;
+	ZMainMemory* m_memory;
 };

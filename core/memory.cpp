@@ -123,7 +123,7 @@ ZMainMemory::ZMainMemory(ZEmulator* emu)
     controllers[MEMORY_AREA_ROM]            = { ADDRESS_ROM_BANK0_START, ADDRESS_ROM_BANK0_END, nullptr };
 
     controllers[MEMORY_AREA_VRAM]           = { ADDRESS_VRAM_START, ADDRESS_VRAM_END, nullptr };
-    controllers[MEMORY_AREA_VRAM].controller_map = new ZVideoRAMController(emu);
+    controllers[MEMORY_AREA_VRAM].controller_map = new ZVideoRAMController(this);
 
     controllers[MEMORY_AREA_EXTERNAL_RAM]   = { ADDRESS_SRAM_START, ADDRESS_SRAM_END, controllers[MEMORY_AREA_ROM].controller_map };
 

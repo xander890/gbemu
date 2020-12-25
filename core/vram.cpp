@@ -11,7 +11,7 @@ uint32 TEX_WIDTH = 16 * 8;
 uint32 BACKGROUND_WIDTH = 32 * 8;
 uint32 BACKGROUND_HEIGHT = 32 * 8;
 
-ZVideoRAMController::ZVideoRAMController(ZEmulator * pEmu) : m_emulator(pEmu)
+ZVideoRAMController::ZVideoRAMController(ZMainMemory * pmemory) : m_memory(pmemory)
 {
 	m_videobank0 = new uint8[0x2000];
 	texdebug = CreateTexture2D(TEX_WIDTH, TEX_WIDTH);
@@ -49,21 +49,21 @@ uint16 ZVideoRAMController::GetSpriteDataStart()
 
 uint16 ZVideoRAMController::GetBackgroundDataStart()
 {
-	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
+	uint8 lcd = m_memory->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
 	bool bZero = (lcd & BACKGROUND_DATA_START_FLAG) == 0;
 	return bZero? BACKGROUND_AND_WINDOW_DATA_START_0 : BACKGROUND_AND_WINDOW_DATA_START_1;
 }
 
 uint16 ZVideoRAMController::GetBackgroundTileStart()
 {
-	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
+	uint8 lcd = m_memory->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
 	bool bZero = (lcd & BACKGROUND_TILEMAP_START_FLAG) == 0;
 	return bZero? BACKGROUND_TILE_MAP_START_0 : BACKGROUND_TILE_MAP_START_1;
 }
 
 uint16 ZVideoRAMController::GetWindowTileStart()
 {
-	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
+	uint8 lcd = m_memory->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
 	bool bZero = (lcd & WINDOW_TILEMAP_START_FLAG) == 0;
 	return bZero? WINDOW_TILE_MAP_START_0 : WINDOW_TILE_MAP_START_1;
 }

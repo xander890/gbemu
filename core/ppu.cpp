@@ -4,10 +4,10 @@
 #include "vram.h"
 #include "ioregisters.h"
 
-ZPPU::ZPPU(ZEmulator* emu)
+ZPPU::ZPPU(ZMainMemory* memory)
 {
-	m_emulator = emu;
-	m_vram = emu->GetMemory()->GetVRAM();
+	m_memory = memory;
+	m_vram = memory->GetVRAM();
 }
 
 ZPPU::~ZPPU()
@@ -16,26 +16,26 @@ ZPPU::~ZPPU()
 
 bool ZPPU::IsLCDEnabled()
 {
-	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
+	uint8 lcd = m_memory->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
 	return (lcd & LCD_ENABLE_FLAG) != 0;
 }
 
 bool ZPPU::IsWindowEnabled()
 {
-	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
+	uint8 lcd = m_memory->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
 	return (lcd & WINDOW_ENABLE_FLAG) != 0;
 }
 
 
 bool ZPPU::IsSpriteEnabled()
 {
-	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
+	uint8 lcd = m_memory->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
 	return (lcd & SPRITE_ENABLE_FLAG) != 0;
 }
 
 uint8 ZPPU::GetSpriteSize()
 {
-	uint8 lcd = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
+	uint8 lcd = m_memory->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
 	return (lcd & SPRITE_SIZE_FLAG) == 0? 8 : 16;
 }
 
@@ -46,8 +46,8 @@ void ZPPU::OAMScan(uint8 scanline)
 	for (uint8 i = 0; i < MAX_SPRITES; i++)
 	{
 		uint16 sprite_address = ADDRESS_OAM_START + i * 4; // 4 bytes per sprite
-		uint8 x = m_emulator->GetMemory()->LoadMemory(sprite_address + 1);
-		uint8 y = m_emulator->GetMemory()->LoadMemory(sprite_address + 0);
+		uint8 x = m_memory->LoadMemory(sprite_address + 1);
+		uint8 y = m_memory->LoadMemory(sprite_address + 0);
 		uint8 translated_ly = scanline + 16;
 		bool visible = x != 0 && translated_ly >= y && translated_ly < (y + h);
 		if (visible)
@@ -59,10 +59,10 @@ void ZPPU::OAMScan(uint8 scanline)
 
 void ZPPU::PixelTransfer(uint8 scanline)
 {
-	uint8 window_x = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_WINDOW_X);
-	uint8 window_y = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_WINDOW_Y);
-	uint8 scroll_x = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_SCROLL_X);
-	uint8 scroll_y = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_SCROLL_Y);
+	uint8 window_x = m_memory->LoadMemory(VIDEO_REGISTER_WINDOW_X);
+	uint8 window_y = m_memory->LoadMemory(VIDEO_REGISTER_WINDOW_Y);
+	uint8 scroll_x = m_memory->LoadMemory(VIDEO_REGISTER_SCROLL_X);
+	uint8 scroll_y = m_memory->LoadMemory(VIDEO_REGISTER_SCROLL_Y);
 	bool can_get_window = scanline >= window_y;
 	uint8 translated_ly = scanline + 16;
 
@@ -77,15 +77,15 @@ void ZPPU::PixelTransfer(uint8 scanline)
 			for (uint8 k = 0; k < m_oamfound; k++)
 			{
 				uint16 sprite_address = ADDRESS_OAM_START + m_oamscan[k] * 4; // 4 bytes per sprite
-				uint8 x_sprite = m_emulator->GetMemory()->LoadMemory(sprite_address + 1);
+				uint8 x_sprite = m_memory->LoadMemory(sprite_address + 1);
 				if (x == x_sprite)
 				{
 					// Load sprite
 					// FIXME unsupported 8x16 load
 					// FIXME unsupported gameboy color
-					uint8 y_sprite = m_emulator->GetMemory()->LoadMemory(sprite_address + 0);
-					uint8 sprite_tile = m_emulator->GetMemory()->LoadMemory(sprite_address + 2);
-					uint8 sprite_flags = m_emulator->GetMemory()->LoadMemory(sprite_address + 3);
+					uint8 y_sprite = m_memory->LoadMemory(sprite_address + 0);
+					uint8 sprite_tile = m_memory->LoadMemory(sprite_address + 2);
+					uint8 sprite_flags = m_memory->LoadMemory(sprite_address + 3);
 
 					bool flip_x = (sprite_flags >> 5) & 1;
 					bool flip_y = (sprite_flags >> 6) & 1;
@@ -98,8 +98,8 @@ void ZPPU::PixelTransfer(uint8 scanline)
 					uint16 sprite_vram_address = m_vram->GetSpriteDataStart() + sprite_tile * 16;
 					uint16 sprite_vram_row = sprite_vram_address + sprite_delta_y;
 
-					uint8 sprite_low = m_emulator->GetMemory()->LoadMemory(sprite_vram_row);
-					uint8 sprite_high = m_emulator->GetMemory()->LoadMemory(sprite_vram_row + 1);
+					uint8 sprite_low = m_memory->LoadMemory(sprite_vram_row);
+					uint8 sprite_high = m_memory->LoadMemory(sprite_vram_row + 1);
 					SPixel p = {};
 
 					uint8 existing_pixels = (uint8)m_oam_fifo.size();
@@ -183,8 +183,8 @@ void ZPPU::PixelTransfer(uint8 scanline)
 			uint8 tile_y_inner = fetch_y % 8;
 			fetch_address += tile_y_inner * 2;
 
-			uint8 data_low = m_emulator->GetMemory()->LoadMemory(fetch_address);
-			uint8 data_high = m_emulator->GetMemory()->LoadMemory(fetch_address + 1);
+			uint8 data_low = m_memory->LoadMemory(fetch_address);
+			uint8 data_high = m_memory->LoadMemory(fetch_address + 1);
 			bool flip_x = false;
 
 			for (uint8 i = 0; i < 8; i++)
@@ -207,15 +207,15 @@ void ZPPU::PixelTransfer(uint8 scanline)
 		// Pixel merge!
 		SPixel pixel = m_bg_fifo.front();
 
-		uint8 bg_palette = m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_BACKGROUND_PALETTE_DMG);
+		uint8 bg_palette = m_memory->LoadMemory(VIDEO_REGISTER_BACKGROUND_PALETTE_DMG);
 		uint8 color_index = (bg_palette >> (2 * pixel.color)) & 0x3; // 0 first two bits, 1 second two bits..
 
 		if (m_oam_fifo.size() != 0)
 		{
 			SPixel oam_pixel = m_oam_fifo.front();
 			uint8 sprite_palettes[2] = {
-				m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_OBJ0_PALETTE_DMG),
-				m_emulator->GetMemory()->LoadMemory(VIDEO_REGISTER_OBJ1_PALETTE_DMG)
+				m_memory->LoadMemory(VIDEO_REGISTER_OBJ0_PALETTE_DMG),
+				m_memory->LoadMemory(VIDEO_REGISTER_OBJ1_PALETTE_DMG)
 			};
 
 			if (oam_pixel.color > 0) // translucency
