@@ -98,8 +98,8 @@ void InputWindow(ZEmulator* pEMU)
 				// Video
 				infos[VIDEO_REGISTER_LCD_CONTROL & 0xFF] = { "LCD", color_video };
 				infos[VIDEO_REGISTER_LCD_STATUS & 0xFF] = { "STA", color_video };
-				infos[VIDEO_REGISTER_SCROLL_X & 0xFF] = { "SCY", color_video };
-				infos[VIDEO_REGISTER_SCROLL_Y & 0xFF] = { "SCX", color_video };
+				infos[VIDEO_REGISTER_SCROLL_Y & 0xFF] = { "SCY", color_video };
+				infos[VIDEO_REGISTER_SCROLL_X & 0xFF] = { "SCX", color_video };
 				infos[VIDEO_REGISTER_LCD_LY_LINE & 0xFF] = { "LY", color_video };
 				infos[VIDEO_REGISTER_LCD_LY_COMPARE & 0xFF] = { "LYC", color_video };
 				infos[VIDEO_REGISTER_DMA_CONTROL & 0xFF] = { "DMA", color_video };

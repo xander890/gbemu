@@ -124,7 +124,8 @@ public:
 	const Registers* GetRegisterSnapshot() { return &registers; };
 	uint16 GetProgramCounter() { return registers.r16.pc; }
 
-	void RunStep();
+	uint32 RunStep();
+	uint32 RunForTicks(uint32 clock_ticks);
 	void Run();
 	void Start();
 	void Quit();

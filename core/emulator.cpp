@@ -24,6 +24,7 @@ void ZEmulator::DrawGUI()
     static bool show_cpu = false;
     static bool show_vram = false;
     static bool show_input = false;
+    static bool show_main_screen = true;
 
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
@@ -33,7 +34,7 @@ void ZEmulator::DrawGUI()
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
     {
         ImGui::Begin("Emulator");                          // Create a window called "Hello, world!" and append into it.
-
+        ImGui::Checkbox("Main window", &show_main_screen);
         ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
         ImGui::Checkbox("Registers", &show_registers);
         ImGui::Checkbox("Instructions", &show_instructions);
@@ -42,6 +43,13 @@ void ZEmulator::DrawGUI()
         ImGui::Checkbox("CPU", &show_cpu);
         ImGui::Checkbox("Input", &show_input);
         ImGui::Checkbox("VRAM", &show_vram);
+        ImGui::End();
+    }
+
+    if (show_main_screen)
+    {
+        ImGui::Begin("Main", &show_registers, ImGuiWindowFlags_AlwaysAutoResize);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+        pPPU->DrawGUI();
         ImGui::End();
     }
 
@@ -114,13 +122,14 @@ ZEmulator::ZEmulator()
     pMemory = new ZMainMemory(this);
     pCPU = new ZCPU(pMemory);
     pPPU = new ZPPU(pMemory);
-    m_thread = std::thread([this] { pCPU->Run(); });
+    m_thread = std::thread([this] { MainLoop(); });
 }
 
 ZEmulator::~ZEmulator()
 {
-    delete pMemory;
+    delete pPPU;
     delete pCPU;
+    delete pMemory;
 }
 
  ZMainMemory* ZEmulator::GetMemory() { return pMemory; }
@@ -134,4 +143,15 @@ ZEmulator::~ZEmulator()
  {
      pCPU->Quit();
      m_thread.join();
+ }
+
+ void ZEmulator::MainLoop()
+ {
+     int32 delta = 0;
+     while (true)
+     {
+         uint32 ppu_ticks = pPPU->Step();
+         uint32 cpu_ticks = pCPU->RunForTicks(ppu_ticks - delta);
+         delta = cpu_ticks - ppu_ticks; // cpu can run a tiny bit ahead of the ppu. account in next frame.
+     }
  }

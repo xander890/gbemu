@@ -1,12 +1,14 @@
 #pragma once
 #include "types.h"
 #include <queue>
+#include <mutex>
 
 class ZMainMemory;
 class ZVideoRAMController;
+struct SInternalTexture;
 
 #define SCREEN_WIDTH 160
-#define SCREEN_HEIGHT 160
+#define SCREEN_HEIGHT 144
 #define MAX_SPRITES 40
 #define MAX_SPRITES_PER_SCANLINE 10
 
@@ -41,6 +43,10 @@ public:
 	bool IsWindowEnabled();
 	bool IsSpriteEnabled();
 	uint8 GetSpriteSize();
+	uint8 GetMode();
+	void SetMode(uint8 mode);
+	void DrawGUI();
+	uint32 Step();
 
 private:
 	uint8 m_oamscan[MAX_SPRITES_PER_SCANLINE];
@@ -60,6 +66,14 @@ private:
 	void OAMScan(uint8 scanline);
 	void PixelTransfer(uint8 scanline);
 
+	void Flip();
+
 	ZVideoRAMController* m_vram;
 	ZMainMemory* m_memory;
+
+	uint32* m_currentFrame;
+
+	std::mutex m_ppuLock;
+	uint32* m_currentFramePresent;
+	SInternalTexture* mainscreentex;
 };

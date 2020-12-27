@@ -3,15 +3,23 @@
 #include "memory.h"
 #include "vram.h"
 #include "ioregisters.h"
+#include "gui.h"
+#include "graphicsdevice.h"
 
 ZPPU::ZPPU(ZMainMemory* memory)
 {
 	m_memory = memory;
 	m_vram = memory->GetVRAM();
+	m_currentFrame = new uint32[SCREEN_WIDTH * SCREEN_HEIGHT];
+	m_currentFramePresent = new uint32[SCREEN_WIDTH * SCREEN_HEIGHT];
+	mainscreentex = CreateTexture2D(SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 ZPPU::~ZPPU()
 {
+	delete[] m_currentFrame;
+	delete[] m_currentFramePresent;
+	FreeTexture2D(mainscreentex);
 }
 
 bool ZPPU::IsLCDEnabled()
@@ -39,20 +47,36 @@ uint8 ZPPU::GetSpriteSize()
 	return (lcd & SPRITE_SIZE_FLAG) == 0? 8 : 16;
 }
 
+uint8 ZPPU::GetMode()
+{
+	uint8 lcd = m_memory->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
+	return lcd & MODE_FLAG_MASK;
+}
+
+void ZPPU::SetMode(uint8 mode)
+{
+	uint8 lcd = m_memory->LoadMemory(VIDEO_REGISTER_LCD_CONTROL);
+	lcd = (lcd & ~MODE_FLAG_MASK) | (mode & MODE_FLAG_MASK);
+	m_memory->StoreMemory(VIDEO_REGISTER_LCD_CONTROL, lcd);
+}
+
 void ZPPU::OAMScan(uint8 scanline)
 {
 	m_oamfound = 0;
-	uint8 h = GetSpriteSize();
-	for (uint8 i = 0; i < MAX_SPRITES; i++)
+	if (IsSpriteEnabled())
 	{
-		uint16 sprite_address = ADDRESS_OAM_START + i * 4; // 4 bytes per sprite
-		uint8 x = m_memory->LoadMemory(sprite_address + 1);
-		uint8 y = m_memory->LoadMemory(sprite_address + 0);
-		uint8 translated_ly = scanline + 16;
-		bool visible = x != 0 && translated_ly >= y && translated_ly < (y + h);
-		if (visible)
+		uint8 h = GetSpriteSize();
+		for (uint8 i = 0; i < MAX_SPRITES; i++)
 		{
-			m_oamscan[m_oamfound++] = i;
+			uint16 sprite_address = ADDRESS_OAM_START + i * 4; // 4 bytes per sprite
+			uint8 x = m_memory->LoadMemory(sprite_address + 1);
+			uint8 y = m_memory->LoadMemory(sprite_address + 0);
+			uint8 translated_ly = scanline + 16;
+			bool visible = x != 0 && translated_ly >= y && translated_ly < (y + h);
+			if (visible && m_oamfound < 10)
+			{
+				m_oamscan[m_oamfound++] = i;
+			}
 		}
 	}
 }
@@ -232,5 +256,68 @@ void ZPPU::PixelTransfer(uint8 scanline)
 		uint32 palette_to_rgb_dmg[4] = { 0xffffffff, 0xffaaaaaa, 0xff555555, 0xff000000 };
 		uint32 final_color = palette_to_rgb_dmg[color_index];
 
+		m_currentFrame[scanline * SCREEN_WIDTH + x] = final_color;
 	}
+}
+
+uint32 ZPPU::Step()
+{
+	uint8 lastmode = GetMode();
+	uint8 ly = m_memory->LoadMemory(VIDEO_REGISTER_LCD_LY_LINE);
+
+	if (lastmode == 2)
+	{
+		SetMode(3);
+		PixelTransfer(ly);
+	}
+	else if (lastmode == 3)
+	{
+		SetMode(0);
+	}
+	else if (lastmode == 0)
+	{
+		ly++;
+		m_memory->StoreMemory(VIDEO_REGISTER_LCD_LY_LINE, ly);
+		if (ly == SCREEN_HEIGHT)
+		{
+			Flip();
+			SetMode(1);
+		}
+		else
+		{
+			SetMode(2);
+			OAMScan(ly);
+		}
+	}
+	else if (lastmode == 1)
+	{
+		ly = (ly + 1) % 153;
+		m_memory->StoreMemory(VIDEO_REGISTER_LCD_LY_LINE, ly);
+		if (ly == 0)
+		{
+			SetMode(2);
+			OAMScan(ly);
+		}
+	}
+
+	uint8 newmode = GetMode();
+	uint32 clock_durations[4] = {204, 456, 80, 172};
+	return clock_durations[newmode];
+}
+
+void ZPPU::Flip()
+{
+	m_ppuLock.lock();
+	memcpy(m_currentFramePresent, m_currentFrame, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32));
+	m_ppuLock.unlock();
+}
+
+void ZPPU::DrawGUI()
+{
+	uint32* texcpu = (uint32*)MapTexture2D(mainscreentex);
+	m_ppuLock.lock();
+	memcpy(texcpu, m_currentFramePresent, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32));
+	m_ppuLock.unlock();
+	UnmapTexture2D(mainscreentex);
+	ImGui::Image(mainscreentex, ImVec2(2.0f*SCREEN_WIDTH, 2.0f*SCREEN_HEIGHT));
 }

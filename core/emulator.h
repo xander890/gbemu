@@ -19,6 +19,7 @@ public:
 	ZMainMemory* GetMemory();
 	void Run();
 	void Quit();
+	void MainLoop();
 
 private:
 	ZCPU* pCPU;

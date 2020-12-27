@@ -889,7 +889,7 @@ struct SInterruptCallBack
 	InstructionFunc Interrupt;
 };
 
-void ZCPU::RunStep()
+uint32 ZCPU::RunStep()
 {
 	bool enable_interrupts_request = master_interrupt_enable_request;
 
@@ -912,13 +912,13 @@ void ZCPU::RunStep()
 		{
 			if (enabled_interrupts & CallBacks[i].flag)
 			{
-				// Vblank
+				// Handle interrupt
 				master_interrupt = 0;
 				register_if &= ~CallBacks[i].flag; // Disable interrupt
 				memory->StoreMemory(INTERRUPT_REQUEST_FLAG, register_if);
 				CallBacks[i].Interrupt();
-				InstructionWait(5); // Always 5 cycles
-				break; // Only one interrupt at a time...
+				InstructionWait(5*4); // Always 5 cycles
+				return 5*4; // Only one interrupt at a time...
 			}
 		}
 	}
@@ -937,7 +937,7 @@ void ZCPU::RunStep()
 	m_instruction_args.opcode = opcodefetch;
 	// Decode
 	SInstruction instr = GetInstruction(opcodefetch, prefix);
-	auto Execute = prefix? instructions_ext[opcodefetch] : instructions[opcodefetch];
+	InstructionFunc Execute = prefix? instructions_ext[opcodefetch] : instructions[opcodefetch];
 
 	m_instruction_args.cycles = instr.cycles_min;
 
@@ -952,6 +952,17 @@ void ZCPU::RunStep()
 		master_interrupt = 1;
 		master_interrupt_enable_request = false;
 	}
+	return m_instruction_args.cycles;
+}
+
+uint32 ZCPU::RunForTicks(uint32 clock_ticks)
+{
+	uint32 effective_ticks = 0;
+	while (effective_ticks < clock_ticks)
+	{
+		effective_ticks += RunStep();
+	}
+	return effective_ticks;
 }
 
 void ZCPU::Run()

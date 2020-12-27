@@ -28,7 +28,7 @@ ZMemoryControllerSimple::~ZMemoryControllerSimple()
 
 void ZMemoryControllerSimple::Reset()
 {
-    memset(&memory[0], 0xCD, sizeof(memory));
+    memset(&memory[0], 0x00, sizeof(memory));
 }
 
 
@@ -50,11 +50,11 @@ ZMemoryControllerEcho::ZMemoryControllerEcho(IMemoryController* pMemory, int16 o
 
 uint8 ZMemoryControllerInvalid::LoadMemory(uint16)
 {
-    assert(false);
+    //assert(false);
     return 0;
 }
 
 void ZMemoryControllerInvalid::StoreMemory(uint16, uint8)
 {
-    assert(false);
+    //assert(false);
 }
